@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#121212" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>Nossa Retrospectiva ♥</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- TELA SPOTIFY -->
+    <section id="player-screen" class="screen">
+      <div class="player-bg" id="player-bg"></div>
+      <div class="player-content">
+        <header class="player-header">
+          <button class="icon-btn" aria-label="Voltar" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+          </button>
+          <div class="header-info">
+            <span class="header-label">TOCANDO DE</span>
+            <span class="header-playlist">Nossa Playlist</span>
+          </div>
+          <button class="icon-btn" aria-label="Menu" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+        </header>
+
+        <div class="album-art-container">
+          <img id="album-art" class="album-art" src="" alt="Capa do álbum" />
+        </div>
+
+        <div class="track-info">
+          <div class="track-text">
+            <h1 id="track-title" class="track-title"></h1>
+            <p id="track-artist" class="track-artist"></p>
+          </div>
+          <button class="icon-btn heart-btn" id="heart-btn" aria-label="Curtir">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </button>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-bar" id="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+            <div class="progress-thumb" id="progress-thumb"></div>
+          </div>
+          <div class="time-labels">
+            <span id="current-time">0:00</span>
+            <span id="total-time">0:00</span>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="control-btn small" aria-label="Shuffle" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 2.25l-1.41 1.41 3.3 3.3 1.41-1.41-3.3-3.3zM10.59 14.83l-1.42 1.41 2.04 2.04 1.41-1.41-2.03-2.04z"/></svg>
+          </button>
+          <button class="control-btn" id="prev-btn" aria-label="Anterior">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+          </button>
+          <button class="control-btn play-btn" id="play-btn" aria-label="Play">
+            <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg class="pause-icon hidden" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </button>
+          <button class="control-btn" id="next-btn" aria-label="Próxima">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+          </button>
+          <button class="control-btn small" aria-label="Repeat" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+          </button>
+        </div>
+
+        <div class="scroll-hint">
+          <span>Role para baixo</span>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO SOBRE -->
+    <section id="about-section" class="about-section">
+      <div class="about-container">
+        <div class="about-header">
+          <span class="about-label">SOBRE</span>
+          <h2 id="about-title" class="about-title"></h2>
+          <p id="about-subtitle" class="about-subtitle"></p>
+        </div>
+
+        <div class="about-couple">
+          <img id="about-photo" class="about-photo" src="" alt="Foto do casal" />
+          <p id="about-desc" class="about-desc"></p>
+        </div>
+
+        <div class="lyrics-section">
+          <div class="lyrics-header">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+            <span>Letra especial</span>
+          </div>
+          <div id="lyrics-text" class="lyrics-text"></div>
+        </div>
+
+        <button id="start-retro-btn" class="retro-btn">
+          <span>Ver retrospectiva</span>
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- RETROSPECTIVA (WRAPPED) -->
+    <section id="retro-section" class="retro-section hidden">
+      <div class="retro-progress">
+        <div id="retro-progress-bars" class="retro-progress-bars"></div>
+      </div>
+
+      <button id="retro-close" class="retro-close" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+
+      <div id="retro-slides" class="retro-slides"></div>
+
+      <div id="retro-tap-overlay" class="retro-tap-overlay"></div>
+
+      <div class="retro-tap-hint">Toque para avançar</div>
+    </section>
+
+    <audio id="audio-player" preload="metadata"></audio>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
