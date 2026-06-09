@@ -4,9 +4,9 @@ const CONFIG = {
   casal: {
     nome1: "Marcos",
     nome2: "Amor",
-    fotoCapa: "assets/images/casal-capa.jpg",
-    fotoSobre: "assets/images/casal-sobre.jpg",
-    dataInicio: "2023-06-12", // formato YYYY-MM-DD
+    fotoCapa: "assets/images/foto_nossa_musica.jpeg",
+    fotoSobre: "assets/images/foto_sobre_nos.jpeg",
+    dataInicio: "2022-09-25", // formato YYYY-MM-DD
   },
 
   musica: {
@@ -15,7 +15,7 @@ const CONFIG = {
     duracao: "3:42",
     // Coloque um arquivo .mp3 em assets/audio/ ou use uma URL externa
     audioUrl: "assets/audio/nossa-musica.mp3",
-    capa: "assets/images/casal-capa.jpg",
+    capa: "assets/images/foto_nossa_musica.jpeg",
   },
 
   sobre: {
@@ -47,6 +47,11 @@ Te amo hoje, amanhã e em todas as estações. ♥`,
         emoji: "💚",
       },
       {
+        tipo: "pergunta-horas",
+        texto: "Sabe quantas horas estamos juntos?",
+        emoji: "⏳",
+      },
+      {
         tipo: "contador",
         titulo: "Juntos há",
         label: "horas de amor",
@@ -69,23 +74,37 @@ Te amo hoje, amanhã e em todas as estações. ♥`,
         titulo: "Memórias em alta",
         subtitulo: "Os melhores momentos do nosso álbum",
         fotos: [
-          { src: "assets/images/foto1.jpg", legenda: "Nosso primeiro encontro" },
-          { src: "assets/images/foto2.jpg", legenda: "Aquele dia perfeito" },
-          { src: "assets/images/foto3.jpg", legenda: "Rindo juntos" },
-          { src: "assets/images/foto4.jpg", legenda: "Mais um capítulo" },
+          { src: "assets/images/foto_carrossel_1.jpeg", legenda: "Nosso primeiro encontro" },
+          { src: "assets/images/foto_carrossel_2.jpeg", legenda: "Aquele dia perfeito" },
+          { src: "assets/images/foto_carrossel_3.jpeg", legenda: "Rindo juntos" },
+          { src: "assets/images/foto_carrossel_4.png", legenda: "Mais um capítulo" },
         ],
+      },
+      {
+        tipo: "surpresa-timeline",
+        emoji: "🎁",
+        linhas: [
+          "Psst...",
+          "Tenho uma surpresa pra você!",
+          "Vamos reviver nossa história juntos?",
+        ],
+        hint: "Prepare o coração...",
       },
       {
         tipo: "timeline",
         titulo: "Nossa linha do tempo",
         subtitulo: "Cada data, uma música nova",
-        eventos: [
-          { data: "12 Jun 2023", titulo: "O começo", descricao: "O dia em que tudo começou" },
-          { data: "15 Ago 2023", titulo: "Primeira viagem", descricao: "Descobrindo o mundo juntos" },
-          { data: "25 Dez 2023", titulo: "Primeiro Natal", descricao: "Família, amor e risadas" },
-          { data: "14 Fev 2024", titulo: "Dia dos Namorados", descricao: "Celebrando nosso amor" },
-          { data: "Hoje", titulo: "Agora", descricao: "Escrevendo novas páginas juntos" },
+        pastaImagens: "assets/images",
+      },
+      {
+        tipo: "surpresa-roleta",
+        emoji: "🎲",
+        linhas: [
+          "Ainda não acabou...",
+          "Tenho mais uma surpresa pra você!",
+          "Vamos deixar o destino decidir?",
         ],
+        hint: "Gire a roleta e descubra...",
       },
       {
         tipo: "roleta",

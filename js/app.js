@@ -1,10 +1,17 @@
 (function () {
-  const BG_COLORS = ['bg-green', 'bg-purple', 'bg-pink', 'bg-orange', 'bg-blue', 'bg-dark'];
+  const BG_COLORS = ['bg-love-rose', 'bg-love-wine', 'bg-love-blush', 'bg-love-crimson', 'bg-love-lavender', 'bg-love-sunset'];
+  const FX_HEARTS = ['♥', '💕', '💗', '❤️', '🤍', '💖'];
+  const FX_SPARKLES = ['✦', '✧', '·', '♥'];
+  const FX_COUNTS = {
+    intro: 14, 'pergunta-horas': 12, contador: 10, 'contador-dias': 10, frase: 8,
+    carrossel: 6, 'surpresa-timeline': 14, timeline: 5, 'surpresa-roleta': 12, roleta: 8, final: 18,
+  };
   const ROULETTE_COLORS = ['#1db954', '#8b5cf6', '#ec4899', '#f97316', '#3b82f6', '#22c55e', '#eab308', '#ef4444', '#06b6d4', '#a855f7', '#f43f5e', '#14b8a6'];
 
   let currentSlide = 0;
   let isPlaying = false;
   let autoAdvanceTimer = null;
+  let autoAdvanceState = { active: false, duration: 0, remaining: 0, pausedAt: 0, slideIndex: -1 };
 
   const audio = document.getElementById('audio-player');
   const playBtn = document.getElementById('play-btn');
@@ -206,6 +213,39 @@
     return Math.floor((now - start) / (1000 * 60 * 60 * 24));
   }
 
+  function parseTimelineFilename(filename, pasta) {
+    const name = filename.replace(/^.*[\\/]/, '').replace(/\.[^.]+$/i, '');
+    const match = name.match(/^(\d{1,2})-(\d{1,2})-(\d{4})[_\s](.+)$/i);
+    if (!match) return null;
+
+    const day = match[1].padStart(2, '0');
+    const month = match[2].padStart(2, '0');
+    const year = match[3];
+    const descricao = match[4].replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+    const titulo = descricao.charAt(0).toUpperCase() + descricao.slice(1);
+
+    const src = filename.includes('/')
+      ? filename
+      : `${pasta}/${filename}`;
+
+    return {
+      data: `${day}/${month}/${year}`,
+      titulo,
+      src,
+      sortKey: `${year}${month}${day}${filename}`,
+    };
+  }
+
+  function getTimelineEventos(slide) {
+    const pasta = slide.pastaImagens || 'assets/images';
+    const lista = typeof TIMELINE_IMAGES !== 'undefined' ? TIMELINE_IMAGES : [];
+
+    return lista
+      .map((file) => parseTimelineFilename(file, pasta))
+      .filter(Boolean)
+      .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  }
+
   function buildRetroSlides() {
     const slides = CONFIG.retrospectiva.slides;
     retroSlides.innerHTML = '';
@@ -219,10 +259,61 @@
 
       const el = document.createElement('div');
       const scrollable = slide.tipo === 'timeline';
-      el.className = 'retro-slide ' + BG_COLORS[i % BG_COLORS.length] + (scrollable ? ' scrollable' : '');
+      el.className = 'retro-slide retro-' + slide.tipo + ' ' + BG_COLORS[i % BG_COLORS.length] + (scrollable ? ' scrollable' : '');
       el.dataset.index = i;
-      el.innerHTML = renderSlide(slide);
+      el.innerHTML = `
+        <div class="slide-effects" aria-hidden="true"></div>
+        <div class="slide-content">${renderSlide(slide)}</div>`;
       retroSlides.appendChild(el);
+    });
+  }
+
+  function spawnSlideEffects(slideEl, tipo) {
+    const container = slideEl.querySelector('.slide-effects');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const count = FX_COUNTS[tipo] || 6;
+    for (let i = 0; i < count; i++) {
+      const heart = document.createElement('span');
+      heart.className = 'fx-heart';
+      heart.textContent = FX_HEARTS[i % FX_HEARTS.length];
+      heart.style.left = (5 + Math.random() * 90) + '%';
+      heart.style.animationDuration = (5 + Math.random() * 7) + 's';
+      heart.style.animationDelay = (Math.random() * 4) + 's';
+      heart.style.fontSize = (12 + Math.random() * 20) + 'px';
+      heart.style.setProperty('--drift', (-20 + Math.random() * 40) + 'px');
+      container.appendChild(heart);
+    }
+
+    if (tipo === 'intro' || tipo === 'final' || tipo === 'frase' || tipo === 'pergunta-horas' || tipo === 'surpresa-timeline' || tipo === 'surpresa-roleta') {
+      for (let i = 0; i < 10; i++) {
+        const spark = document.createElement('span');
+        spark.className = 'fx-sparkle';
+        spark.textContent = FX_SPARKLES[i % FX_SPARKLES.length];
+        spark.style.left = (Math.random() * 100) + '%';
+        spark.style.top = (Math.random() * 100) + '%';
+        spark.style.animationDelay = (Math.random() * 2) + 's';
+        spark.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+        container.appendChild(spark);
+      }
+    }
+
+    if (tipo === 'final') {
+      const burst = document.createElement('div');
+      burst.className = 'fx-heart-burst';
+      burst.textContent = '💕';
+      container.appendChild(burst);
+    }
+  }
+
+  function restartSlideAnimations(slideEl) {
+    slideEl.querySelectorAll(
+      '.slide-emoji, .slide-title, .slide-subtitle, .slide-text, .counter-display, .counter-label, .carousel-container, .timeline-container, .roulette-container, .spin-btn, .pergunta-scene, .pergunta-clock, .pw, .pergunta-dots, .surpresa-scene, .surpresa-gift, .surpresa-line, .surpresa-hint, .surpresa-spark'
+    ).forEach((el) => {
+      el.style.animation = 'none';
+      void el.offsetHeight;
+      el.style.animation = '';
     });
   }
 
@@ -233,6 +324,25 @@
           <div class="slide-emoji">${slide.emoji}</div>
           <h2 class="slide-title">${slide.titulo}</h2>
           <p class="slide-subtitle">${slide.subtitulo}</p>`;
+
+      case 'pergunta-horas': {
+        const palavras = slide.texto.split(' ');
+        const glowWords = new Set(['horas', 'juntos?']);
+        return `
+          <div class="pergunta-scene">
+            <div class="pergunta-clock">${slide.emoji || '⏳'}</div>
+            <p class="pergunta-text">
+              ${palavras.map((p, i) => {
+                const glow = glowWords.has(p) ? ' pw-glow' : '';
+                return `<span class="pw${glow}" style="animation-delay:${0.4 + i * 0.35}s">${p}</span>`;
+              }).join(' ')}
+            </p>
+            <p class="pergunta-dots" aria-hidden="true">
+              <span style="animation-delay:2.4s">.</span><span style="animation-delay:2.55s">.</span><span style="animation-delay:2.7s">.</span>
+            </p>
+            <p class="pergunta-hint" style="animation-delay:3.2s">Vamos descobrir...</p>
+          </div>`;
+      }
 
       case 'contador':
         return `
@@ -271,21 +381,39 @@
             <p class="carousel-tap-hint">Toque na foto</p>
           </div>`;
 
-      case 'timeline':
+      case 'surpresa-timeline':
+      case 'surpresa-roleta':
+        return `
+          <div class="surpresa-scene surpresa-${slide.tipo}">
+            <div class="surpresa-spark surpresa-spark-1">✨</div>
+            <div class="surpresa-spark surpresa-spark-2">💕</div>
+            <div class="surpresa-spark surpresa-spark-3">✨</div>
+            <div class="surpresa-gift">${slide.emoji || '🎁'}</div>
+            <div class="surpresa-lines">
+              ${(slide.linhas || []).map((linha, i) => `
+                <p class="surpresa-line${i === slide.linhas.length - 1 ? ' surpresa-line-glow' : ''}" style="animation-delay:${0.6 + i * 0.9}s">${linha}</p>
+              `).join('')}
+            </div>
+            <p class="surpresa-hint" style="animation-delay:${0.6 + (slide.linhas || []).length * 0.9 + 0.6}s">${slide.hint || 'Prepare o coração...'}</p>
+          </div>`;
+
+      case 'timeline': {
+        const eventos = slide.eventos || getTimelineEventos(slide);
         return `
           <h2 class="slide-title">${slide.titulo}</h2>
           <p class="slide-subtitle">${slide.subtitulo}</p>
           <div class="timeline-container">
-            ${slide.eventos.map((ev, i) => `
-              <div class="timeline-item" style="animation-delay:${i * 0.2}s">
+            ${eventos.map((ev, i) => `
+              <div class="timeline-item" style="animation-delay:${Math.min(i * 0.08, 2)}s">
+                <img class="timeline-photo" src="${ev.src}" alt="${ev.titulo}" loading="lazy" />
                 <span class="timeline-date">${ev.data}</span>
                 <div class="timeline-content">
                   <h4>${ev.titulo}</h4>
-                  <p>${ev.descricao}</p>
                 </div>
               </div>
             `).join('')}
           </div>`;
+      }
 
       case 'roleta':
         return `
@@ -311,16 +439,23 @@
 
   function setupRetroNavigation() {
     const tapOverlay = document.getElementById('retro-tap-overlay');
-    const pointer = { startX: 0, startY: 0, moved: false, active: false };
+    const pointer = { startX: 0, startY: 0, moved: false, active: false, downAt: 0 };
 
     document.getElementById('retro-close').addEventListener('click', closeRetrospective);
 
+    function canHoldPause(target) {
+      return !target.closest('.retro-close, .spin-btn, .carousel-container');
+    }
+
     retroSection.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('.retro-close, .spin-btn, .carousel-container')) return;
+      if (!canHoldPause(e.target)) return;
       pointer.startX = e.clientX;
       pointer.startY = e.clientY;
       pointer.moved = false;
       pointer.active = true;
+      pointer.downAt = Date.now();
+      pauseAutoAdvance();
+      retroSection.classList.add('holding');
     });
 
     retroSection.addEventListener('pointermove', (e) => {
@@ -330,17 +465,32 @@
       }
     });
 
-    retroSection.addEventListener('pointerup', (e) => {
+    function onPointerEnd(e) {
       if (!pointer.active) return;
       pointer.active = false;
-      if (e.target.closest('.retro-close, .spin-btn, .carousel-container')) return;
+      retroSection.classList.remove('holding');
 
-      const swipeOnly = tapOverlay.classList.contains('disabled');
-      handleRetroNavigation(e.clientX, pointer.startX, pointer.startY, e.clientY, pointer.moved, swipeOnly);
-    });
+      if (!canHoldPause(e.target)) {
+        resumeAutoAdvance();
+        return;
+      }
 
+      const holdDuration = Date.now() - pointer.downAt;
+      const wasHold = holdDuration > 200 && !pointer.moved;
+
+      if (!wasHold) {
+        const swipeOnly = tapOverlay.classList.contains('disabled');
+        handleRetroNavigation(e.clientX, pointer.startX, pointer.startY, e.clientY, pointer.moved, swipeOnly);
+      }
+
+      resumeAutoAdvance();
+    }
+
+    retroSection.addEventListener('pointerup', onPointerEnd);
     retroSection.addEventListener('pointercancel', () => {
       pointer.active = false;
+      retroSection.classList.remove('holding');
+      resumeAutoAdvance();
     });
   }
 
@@ -355,7 +505,7 @@
       return;
     }
 
-    if (moved || swipeOnly) return;
+    if (moved) return;
 
     const overlay = document.getElementById('retro-tap-overlay');
     const rect = overlay.getBoundingClientRect();
@@ -363,9 +513,12 @@
 
     if (tapPct < 0.3) {
       if (currentSlide > 0) goToSlide(currentSlide - 1);
-    } else {
-      if (currentSlide < total - 1) goToSlide(currentSlide + 1);
+      return;
     }
+
+    if (swipeOnly) return;
+
+    if (currentSlide < total - 1) goToSlide(currentSlide + 1);
   }
 
   function openRetrospective() {
@@ -378,8 +531,9 @@
 
   function closeRetrospective() {
     retroSection.classList.add('hidden');
+    retroSection.classList.remove('holding');
     document.body.style.overflow = '';
-    clearTimeout(autoAdvanceTimer);
+    clearAutoAdvance();
   }
 
   function goToSlide(index) {
@@ -390,15 +544,21 @@
     const direction = index > currentSlide ? 'exit-left' : 'exit-right';
 
     slides.forEach((s, i) => {
-      s.classList.remove('active', 'exit-left', 'exit-right');
+      s.classList.remove('active', 'exit-left', 'exit-right', 'entering');
       if (i === currentSlide && i !== index) s.classList.add(direction);
-      if (i === index) s.classList.add('active');
+      if (i === index) {
+        s.classList.add('active', 'entering');
+        setTimeout(() => s.classList.remove('entering'), 700);
+      }
     });
 
     const activeSlide = slides[index];
     const slideData = CONFIG.retrospectiva.slides[index];
 
-    updateProgressBars(index, slideData.tipo !== 'carrossel');
+    spawnSlideEffects(activeSlide, slideData.tipo);
+    restartSlideAnimations(activeSlide);
+
+    updateProgressBars(index, slideData.tipo !== 'carrossel' && slideData.tipo !== 'timeline');
     currentSlide = index;
     const isInteractive = ['carrossel', 'roleta', 'timeline'].includes(slideData.tipo);
 
@@ -411,8 +571,10 @@
     } else {
       hint.style.display = 'block';
       if (slideData.tipo === 'carrossel') hint.textContent = 'Toque nas fotos para ver todas';
-      else if (isInteractive) hint.textContent = 'Deslize para o lado ↔';
-      else hint.textContent = 'Toque para avançar';
+      else if (slideData.tipo === 'timeline') hint.textContent = 'Role até o final da linha do tempo';
+      else if (slideData.tipo === 'roleta') hint.textContent = 'Gire a roleta · toque à esquerda para voltar';
+      else if (isInteractive) hint.textContent = 'Deslize para o lado · segure para pausar';
+      else hint.textContent = 'Toque para avançar · segure para pausar';
     }
     vibrate(12);
 
@@ -425,25 +587,111 @@
     }
 
     if (slideData.tipo === 'roleta') {
+      activeSlide.dataset.rouletteSpun = '';
       drawRoulette();
       setupRoulette(activeSlide);
     }
 
-    clearTimeout(autoAdvanceTimer);
-    if (slideData.tipo === 'carrossel') return;
-    if (slideData.tipo !== 'roleta' && index < total - 1) {
-      scheduleSlideAutoAdvance(8000);
+    if (slideData.tipo === 'timeline') {
+      setupTimeline(activeSlide);
     }
+
+    clearAutoAdvance();
+    if (slideData.tipo === 'carrossel' || slideData.tipo === 'timeline') return;
+    if (slideData.tipo !== 'roleta' && index < total - 1) {
+      const delay = slideData.tipo === 'pergunta-horas' ? 5500
+        : (slideData.tipo === 'surpresa-timeline' || slideData.tipo === 'surpresa-roleta') ? 6500
+        : 8000;
+      scheduleSlideAutoAdvance(delay);
+    }
+  }
+
+  function enableRouletteAdvance(slideEl) {
+    slideEl.dataset.rouletteSpun = '1';
+    document.getElementById('retro-tap-overlay').classList.remove('disabled');
+
+    const hint = document.querySelector('.retro-tap-hint');
+    const total = CONFIG.retrospectiva.slides.length;
+    if (hint && currentSlide < total - 1) {
+      hint.style.display = 'block';
+      hint.textContent = 'Toque à direita para avançar · segure para pausar';
+    }
+
+    if (currentSlide < total - 1) {
+      scheduleSlideAutoAdvance(10000);
+    }
+  }
+
+  function clearAutoAdvance() {
+    clearTimeout(autoAdvanceTimer);
+    autoAdvanceState = { active: false, duration: 0, remaining: 0, pausedAt: 0, slideIndex: -1 };
   }
 
   function scheduleSlideAutoAdvance(delay) {
     clearTimeout(autoAdvanceTimer);
+    autoAdvanceState = {
+      active: true,
+      duration: delay,
+      remaining: delay,
+      pausedAt: 0,
+      slideIndex: currentSlide,
+    };
     animateProgressBar(currentSlide, delay);
     autoAdvanceTimer = setTimeout(() => {
       if (currentSlide < CONFIG.retrospectiva.slides.length - 1) {
         goToSlide(currentSlide + 1);
       }
     }, delay);
+  }
+
+  function pauseAutoAdvance() {
+    if (!autoAdvanceState.active || autoAdvanceState.pausedAt) return;
+
+    clearTimeout(autoAdvanceTimer);
+
+    const fills = retroProgressBars.querySelectorAll('.retro-progress-fill');
+    const fill = fills[currentSlide];
+    if (!fill) return;
+
+    const bar = fill.parentElement;
+    const currentWidth = fill.getBoundingClientRect().width;
+    const totalWidth = bar.getBoundingClientRect().width;
+    const pct = totalWidth > 0 ? (currentWidth / totalWidth) * 100 : 0;
+
+    fill.style.transition = 'none';
+    fill.style.width = pct + '%';
+
+    autoAdvanceState.pausedAt = Date.now();
+    autoAdvanceState.remaining = autoAdvanceState.duration * (1 - pct / 100);
+  }
+
+  function resumeAutoAdvance() {
+    if (!autoAdvanceState.active || !autoAdvanceState.pausedAt) return;
+    if (autoAdvanceState.slideIndex !== currentSlide) return;
+
+    const remaining = autoAdvanceState.remaining;
+    autoAdvanceState.pausedAt = 0;
+
+    if (remaining <= 50) {
+      if (currentSlide < CONFIG.retrospectiva.slides.length - 1) {
+        goToSlide(currentSlide + 1);
+      }
+      return;
+    }
+
+    autoAdvanceState.remaining = remaining;
+    const fills = retroProgressBars.querySelectorAll('.retro-progress-fill');
+    const fill = fills[currentSlide];
+    if (fill) {
+      fill.style.transition = `width ${remaining}ms linear`;
+      fill.style.width = '100%';
+    }
+
+    autoAdvanceTimer = setTimeout(() => {
+      if (currentSlide < CONFIG.retrospectiva.slides.length - 1) {
+        goToSlide(currentSlide + 1);
+      }
+    }, remaining);
   }
 
   function animateProgressBar(index, duration) {
@@ -482,8 +730,52 @@
       tapHint.textContent = 'Todas vistas! Avançando...';
       tapHint.classList.add('complete');
     }
-    if (retroHint) retroHint.textContent = 'Avançando em instantes...';
+    if (retroHint) retroHint.textContent = 'Avançando em instantes... · segure para pausar';
     scheduleSlideAutoAdvance(4000);
+  }
+
+  function isScrolledToBottom(el, threshold) {
+    return el.scrollHeight - el.scrollTop - el.clientHeight <= (threshold || 48);
+  }
+
+  function checkTimelineEnd(slideEl) {
+    if (slideEl.dataset.timelineComplete) return;
+    if (!isScrolledToBottom(slideEl)) return;
+
+    slideEl.dataset.timelineComplete = '1';
+    onTimelineComplete(slideEl);
+  }
+
+  function onTimelineComplete(slideEl) {
+    const retroHint = document.querySelector('.retro-tap-hint');
+    const total = CONFIG.retrospectiva.slides.length;
+    if (retroHint && currentSlide < total - 1) {
+      retroHint.textContent = 'Fim da linha do tempo! Avançando... · segure para pausar';
+    }
+    scheduleSlideAutoAdvance(4000);
+  }
+
+  function setupTimeline(slideEl) {
+    slideEl.scrollTop = 0;
+    slideEl.dataset.timelineComplete = '';
+
+    function check() {
+      checkTimelineEnd(slideEl);
+    }
+
+    if (!slideEl.dataset.timelineReady) {
+      slideEl.dataset.timelineReady = '1';
+      slideEl.addEventListener('scroll', check, { passive: true });
+    }
+
+    slideEl.querySelectorAll('.timeline-photo').forEach((img) => {
+      if (img.complete) return;
+      img.addEventListener('load', check);
+      img.addEventListener('error', check);
+    });
+
+    requestAnimationFrame(check);
+    setTimeout(check, 600);
   }
 
   function animateCounter(el) {
@@ -573,10 +865,17 @@
       checkAllViewed();
     }
 
+    // Evita que o toque que trouxe até este slide dispare o carrossel
+    stack.dataset.blockClick = '1';
+    setTimeout(() => {
+      stack.dataset.blockClick = '';
+    }, 500);
+
     if (!stack.dataset.ready) {
       stack.dataset.ready = '1';
       stack.addEventListener('click', (e) => {
         e.stopPropagation();
+        if (stack.dataset.blockClick === '1') return;
         nextPhoto();
       });
     }
@@ -699,6 +998,7 @@
         resultEl.textContent = locais[actualWinner];
         spinning = false;
         newSpinBtn.disabled = false;
+        enableRouletteAdvance(slideEl);
       }, 4000);
     });
   }
