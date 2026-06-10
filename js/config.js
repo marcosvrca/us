@@ -13,9 +13,15 @@ const CONFIG = {
     titulo: "Nossa Música",
     artista: "Você & Eu",
     duracao: "3:42",
-    // Coloque um arquivo .mp3 em assets/audio/ ou use uma URL externa
-    audioUrl: "assets/audio/nossa-musica.mp3",
+    audioUrl: "assets/audio/musica1.mp3",
     capa: "assets/images/foto_nossa_musica.jpeg",
+  },
+
+  musicas: {
+    inicio: "assets/audio/musica1.mp3",
+    retrospectiva: "assets/audio/musica2.mp3",
+    memorias: "assets/audio/musica3.mp3",
+    posTimeline: "assets/audio/musica4.mp3",
   },
 
   sobre: {
@@ -68,6 +74,7 @@ Te amo hoje, amanhã e em todas as estações. ♥`,
         titulo: "Nossa faixa favorita?",
         texto: "Você. Sempre você.",
         emoji: "🎵",
+        foto: "assets/images/foto_favorita.jpeg",
       },
       {
         tipo: "carrossel",

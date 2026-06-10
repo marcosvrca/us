@@ -14,6 +14,12 @@
   let autoAdvanceState = { active: false, duration: 0, remaining: 0, pausedAt: 0, slideIndex: -1 };
 
   const audio = document.getElementById('audio-player');
+  const bgmA = document.getElementById('bgm-a');
+  const bgmB = document.getElementById('bgm-b');
+  const BGM_FADE_MS = 2000;
+  let bgmActive = 'a';
+  let bgmCurrentUrl = null;
+  let bgmFadeFrame = null;
   const playBtn = document.getElementById('play-btn');
   const progressFill = document.getElementById('progress-fill');
   const progressThumb = document.getElementById('progress-thumb');
@@ -26,12 +32,117 @@
   const retroProgressBars = document.getElementById('retro-progress-bars');
 
   function init() {
+    setupBgm();
     setupPlayer();
     setupAbout();
     buildRetroSlides();
     setupRetroNavigation();
     setupScrollAnimations();
     preventZoom();
+    startBgm(CONFIG.musicas.inicio);
+  }
+
+  function getActiveBgm() {
+    return bgmActive === 'a' ? bgmA : bgmB;
+  }
+
+  function getInactiveBgm() {
+    return bgmActive === 'a' ? bgmB : bgmA;
+  }
+
+  function setupBgm() {
+    [bgmA, bgmB].forEach((el) => {
+      el.volume = 0;
+      el.loop = true;
+    });
+  }
+
+  function unlockBgm() {
+    const track = getActiveBgm();
+    if (bgmCurrentUrl && track.paused) {
+      track.play().catch(() => {});
+    }
+  }
+
+  function startBgm(url) {
+    if (!url) return;
+    bgmCurrentUrl = url;
+    bgmActive = 'a';
+    bgmA.src = url;
+    bgmA.volume = 1;
+    bgmA.currentTime = 0;
+    bgmA.play().then(() => {
+      if (retroSection.classList.contains('hidden')) {
+        isPlaying = true;
+        updatePlayButton();
+        albumArt.classList.add('playing');
+      }
+    }).catch(() => {
+      const unlock = () => {
+        bgmA.play().then(() => {
+          if (retroSection.classList.contains('hidden')) {
+            isPlaying = true;
+            updatePlayButton();
+            albumArt.classList.add('playing');
+          }
+        }).catch(() => {});
+      };
+      document.addEventListener('pointerdown', unlock, { once: true });
+      document.addEventListener('click', unlock, { once: true });
+    });
+  }
+
+  function crossfadeBgm(url) {
+    if (!url || url === bgmCurrentUrl) return;
+
+    if (bgmFadeFrame) cancelAnimationFrame(bgmFadeFrame);
+
+    const from = getActiveBgm();
+    const to = getInactiveBgm();
+    const fromVol = from.paused ? 0 : from.volume;
+
+    to.src = url;
+    to.volume = 0;
+    to.currentTime = 0;
+
+    const startFade = () => {
+      const start = performance.now();
+
+      const step = (now) => {
+        const t = Math.min((now - start) / BGM_FADE_MS, 1);
+        const eased = t * t * (3 - 2 * t);
+        to.volume = eased;
+        if (!from.paused) from.volume = fromVol * (1 - eased);
+
+        if (t < 1) {
+          bgmFadeFrame = requestAnimationFrame(step);
+        } else {
+          from.pause();
+          from.volume = 0;
+          to.volume = 1;
+          bgmActive = bgmActive === 'a' ? 'b' : 'a';
+          bgmCurrentUrl = url;
+          bgmFadeFrame = null;
+        }
+      };
+
+      bgmFadeFrame = requestAnimationFrame(step);
+    };
+
+    to.play().then(startFade).catch(startFade);
+  }
+
+  function handleBgmForSlide(prevSlide, nextSlide, newIndex, oldIndex) {
+    if (!CONFIG.musicas) return;
+
+    if (nextSlide.tipo === 'surpresa-timeline' && newIndex !== oldIndex) {
+      crossfadeBgm(CONFIG.musicas.memorias);
+      return;
+    }
+
+    if (prevSlide && prevSlide.tipo === 'timeline' && newIndex > oldIndex) {
+      crossfadeBgm(CONFIG.musicas.posTimeline);
+    }
   }
 
   function preventZoom() {
@@ -71,9 +182,18 @@
     progressBar.addEventListener('touchstart', onProgressTouch, { passive: false });
     progressBar.addEventListener('touchmove', onProgressTouch, { passive: false });
     audio.addEventListener('timeupdate', updateProgress);
+    bgmA.addEventListener('timeupdate', updateProgress);
+    bgmB.addEventListener('timeupdate', updateProgress);
     audio.addEventListener('loadedmetadata', () => {
       totalTimeEl.textContent = formatTime(audio.duration);
     });
+    const syncBgmDuration = (e) => {
+      if (retroSection.classList.contains('hidden') && e.target === getActiveBgm()) {
+        totalTimeEl.textContent = formatTime(e.target.duration);
+      }
+    };
+    bgmA.addEventListener('loadedmetadata', syncBgmDuration);
+    bgmB.addEventListener('loadedmetadata', syncBgmDuration);
     audio.addEventListener('ended', () => {
       isPlaying = false;
       updatePlayButton();
@@ -81,30 +201,28 @@
     });
 
     document.getElementById('prev-btn').addEventListener('click', () => {
-      audio.currentTime = 0;
+      const src = retroSection.classList.contains('hidden') ? getActiveBgm() : audio;
+      src.currentTime = 0;
     });
     document.getElementById('next-btn').addEventListener('click', () => {
-      audio.currentTime = Math.min(audio.currentTime + 10, audio.duration || 0);
+      const src = retroSection.classList.contains('hidden') ? getActiveBgm() : audio;
+      src.currentTime = Math.min(src.currentTime + 10, src.duration || 0);
     });
   }
 
   function togglePlay() {
-    if (!audio.src) {
-      isPlaying = !isPlaying;
-      updatePlayButton();
-      albumArt.classList.toggle('playing', isPlaying);
-      simulateProgress();
-      return;
-    }
+    if (!retroSection.classList.contains('hidden')) return;
+
+    const bgm = getActiveBgm();
+    unlockBgm();
 
     if (isPlaying) {
+      bgm.pause();
       audio.pause();
       albumArt.classList.remove('playing');
     } else {
-      audio.play().catch(() => {
-        isPlaying = !isPlaying;
-        updatePlayButton();
-        albumArt.classList.toggle('playing', isPlaying);
+      if (!bgmCurrentUrl) startBgm(CONFIG.musicas.inicio);
+      bgm.play().catch(() => {
         simulateProgress();
       });
       albumArt.classList.add('playing');
@@ -141,11 +259,16 @@
   }
 
   function updateProgress() {
-    if (!audio.duration) return;
-    const pct = (audio.currentTime / audio.duration) * 100;
+    const source = !retroSection.classList.contains('hidden') ? audio : getActiveBgm();
+    if (!source.duration) return;
+    const pct = (source.currentTime / source.duration) * 100;
     progressFill.style.width = pct + '%';
     progressThumb.style.left = pct + '%';
-    currentTimeEl.textContent = formatTime(audio.currentTime);
+    currentTimeEl.textContent = formatTime(source.currentTime);
+    if (!retroSection.classList.contains('hidden')) return;
+    isPlaying = !source.paused;
+    updatePlayButton();
+    albumArt.classList.toggle('playing', isPlaying);
   }
 
   function getProgressPct(clientX) {
@@ -165,7 +288,10 @@
   }
 
   function applySeek(pct) {
-    if (audio.duration) {
+    const source = !retroSection.classList.contains('hidden') ? audio : getActiveBgm();
+    if (source.duration) {
+      source.currentTime = pct * source.duration;
+    } else if (audio.duration) {
       audio.currentTime = pct * audio.duration;
     } else {
       progressFill.style.width = (pct * 100) + '%';
@@ -198,7 +324,10 @@
       `<div class="line" style="animation-delay:${i * 0.15}s">${line || '&nbsp;'}</div>`
     ).join('');
 
-    document.getElementById('start-retro-btn').addEventListener('click', openRetrospective);
+    document.getElementById('start-retro-btn').addEventListener('click', () => {
+      crossfadeBgm(CONFIG.musicas.retrospectiva);
+      openRetrospective();
+    });
   }
 
   function getHoursTogether() {
@@ -309,7 +438,7 @@
 
   function restartSlideAnimations(slideEl) {
     slideEl.querySelectorAll(
-      '.slide-emoji, .slide-title, .slide-subtitle, .slide-text, .counter-display, .counter-label, .carousel-container, .timeline-container, .roulette-container, .spin-btn, .pergunta-scene, .pergunta-clock, .pw, .pergunta-dots, .surpresa-scene, .surpresa-gift, .surpresa-line, .surpresa-hint, .surpresa-spark'
+      '.slide-emoji, .slide-title, .slide-subtitle, .slide-text, .counter-display, .counter-label, .carousel-container, .timeline-container, .roulette-container, .spin-btn, .pergunta-scene, .pergunta-clock, .pw, .pergunta-dots, .surpresa-scene, .surpresa-gift, .surpresa-line, .surpresa-hint, .surpresa-spark, .frase-photo-wrap'
     ).forEach((el) => {
       el.style.animation = 'none';
       void el.offsetHeight;
@@ -362,7 +491,11 @@
         return `
           <div class="slide-emoji">${slide.emoji}</div>
           <h2 class="slide-title">${slide.titulo}</h2>
-          <p class="slide-text">${slide.texto}</p>`;
+          <p class="slide-text">${slide.texto}</p>
+          ${slide.foto ? `
+            <div class="frase-photo-wrap">
+              <img class="frase-photo" src="${slide.foto}" alt="Nossa foto favorita" />
+            </div>` : ''}`;
 
       case 'carrossel':
         return `
@@ -527,6 +660,7 @@
     currentSlide = 0;
     goToSlide(0);
     drawRoulette();
+    unlockBgm();
   }
 
   function closeRetrospective() {
@@ -534,6 +668,7 @@
     retroSection.classList.remove('holding');
     document.body.style.overflow = '';
     clearAutoAdvance();
+    crossfadeBgm(CONFIG.musicas.inicio);
   }
 
   function goToSlide(index) {
@@ -554,12 +689,15 @@
 
     const activeSlide = slides[index];
     const slideData = CONFIG.retrospectiva.slides[index];
+    const prevSlideData = CONFIG.retrospectiva.slides[currentSlide];
+    const oldIndex = currentSlide;
 
     spawnSlideEffects(activeSlide, slideData.tipo);
     restartSlideAnimations(activeSlide);
 
     updateProgressBars(index, slideData.tipo !== 'carrossel' && slideData.tipo !== 'timeline');
     currentSlide = index;
+    handleBgmForSlide(prevSlideData, slideData, index, oldIndex);
     const isInteractive = ['carrossel', 'roleta', 'timeline'].includes(slideData.tipo);
 
     const tapOverlay = document.getElementById('retro-tap-overlay');
@@ -599,9 +737,9 @@
     clearAutoAdvance();
     if (slideData.tipo === 'carrossel' || slideData.tipo === 'timeline') return;
     if (slideData.tipo !== 'roleta' && index < total - 1) {
-      const delay = slideData.tipo === 'pergunta-horas' ? 5500
-        : (slideData.tipo === 'surpresa-timeline' || slideData.tipo === 'surpresa-roleta') ? 6500
-        : 8000;
+      const delay = slideData.tipo === 'pergunta-horas' ? 6500
+        : (slideData.tipo === 'surpresa-timeline' || slideData.tipo === 'surpresa-roleta') ? 7500
+        : 10000;
       scheduleSlideAutoAdvance(delay);
     }
   }
@@ -716,7 +854,7 @@
         fill.classList.add('done');
       } else if (i === activeIndex && animateCurrent) {
         requestAnimationFrame(() => {
-          fill.style.transition = 'width 8s linear';
+          fill.style.transition = 'width 10s linear';
           fill.style.width = '100%';
         });
       }

@@ -20,7 +20,7 @@ const TIMELINE_IMAGES = [
   "09-04-2024_sua_saida_do_hospital.jpeg",
   "02-06-2024_nosso_ultimo_greve_juntos.jpeg",
   "10-7-2024_primeira_vez_dormindo_no_nosso_carrinho.jpeg",
-  "14-07-2024_primeira vez na praia do funil.jpeg",
+  "14-07-2024_primeira_vez_na_praia_do_funil.jpeg",
   "15-09-2024_viagem_pra_festa_da_sua_familia.jpeg",
   "22-10-2024_indo_relaizar_nosso_sonho_primeira_vez_viajando_sozinhos.jpeg",
   "22-10-2024_no_zoologico.jpeg",
@@ -50,6 +50,8 @@ const TIMELINE_IMAGES = [
   "11-05-2026_indo_no_jogo_com_seu_pai.jpeg",
   "20-05-2026_eu_sou_o_titan_blindado_e_o_beto_carreiro_eh_o_titan_colossal.jpeg",
   "20-05-2026_minha_formatura_com_meu_par.jpeg",
+  "23-05-2026_fingindo_que_somos_surfistas.jpeg",
   "29-05-2026_comendo_um_shuzisinho.jpeg",
-  "30-05-2026_luau_em_taquaruçu.jpeg"
+  "30-05-2026_luau_em_taquaruçu.jpeg",
+  "09-06-2026_comecando_uma_tradicao.jpeg"
 ];
